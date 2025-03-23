@@ -89,7 +89,6 @@ func (cache *cache) CountRequest(
 
 func (cache *cache) shouldBlock(report *IPReport) bool {
 	// Check if entry should be reset.
-	// TODO auto cleanup.
 	if report.Blocked && time.Since(report.LastSeen) > cache.config.ResetAfter {
 		return false
 	}
