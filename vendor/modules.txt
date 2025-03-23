@@ -1,0 +1,3 @@
+# github.com/monperrus/crawler-user-agents v0.0.0-20250316060738-283a9df01b05
+## explicit; go 1.19
+github.com/monperrus/crawler-user-agents

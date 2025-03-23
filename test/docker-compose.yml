@@ -1,0 +1,31 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: "traefik:v3.3"
+    container_name: "traefik"
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.web.address=:80"
+      - "--experimental.localPlugins.plugindemo.moduleName=github.com/Cubicroots-Playground/traefik-block-malicious-ips"
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "2112:2112"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "../.:/plugins-local/src/github.com/Cubicroots-Playground/traefik-block-malicious-ips"
+
+  whoami:
+    image: "traefik/whoami"
+    container_name: "simple-service"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
+      - "traefik.http.routers.whoami.entrypoints=web"
+      - "traefik.http.middlewares.my-plugindemo.plugin.plugindemo.a=b"
+      - "traefik.http.routers.whoami.middlewares=my-plugindemo"

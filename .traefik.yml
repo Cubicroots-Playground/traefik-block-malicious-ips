@@ -1,0 +1,9 @@
+displayName: Blocking Malicious Requests
+type: middleware
+
+import: github.com/Cubicroots-Playground/traefik-block-malicious-ips
+
+summary: 'tbd'
+
+testData:
+  a: b
