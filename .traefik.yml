@@ -3,7 +3,14 @@ type: middleware
 
 import: github.com/Cubicroots-Playground/traefik-block-malicious-ips
 
-summary: 'tbd'
+summary: 'Blocks malicious requests either by amount of requests or if requests are from crawlers or attempting authentication enumeration'
 
 testData:
-  a: b
+  resetAfterMinutes: 5
+  minTimeSeconds: 5
+  minRequestsCrawler: 20
+  minRequestsAuthEnumeration: 5
+  minRequestsSpam: 50
+  minRequestsPerMinuteCrawler: 0
+  minRequestsPerMinuteAuthEnumeration: 0
+  minRequestsPerMinuteSpam: 60 
