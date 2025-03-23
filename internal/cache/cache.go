@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"os"
 	"sync"
 	"time"
 )
@@ -23,11 +24,15 @@ type Config struct {
 
 // New assembles a new cache.
 func New(cfg *Config) Cache {
-	return &cache{
+	service := &cache{
 		lock:    sync.RWMutex{},
 		counter: map[string]*IPReport{},
 		config:  cfg,
 	}
+
+	go service.runCleanup()
+
+	return service
 }
 
 type cache struct {
@@ -119,4 +124,24 @@ func (cache *cache) shouldBlock(report *IPReport) bool {
 	}
 
 	return block
+}
+
+func (cache *cache) runCleanup() {
+	ticker := time.NewTicker(time.Minute)
+	for {
+		<-ticker.C
+		cache.cleanup()
+	}
+}
+
+func (cache *cache) cleanup() {
+	cache.lock.Lock()
+	defer cache.lock.Unlock()
+
+	for ip, report := range cache.counter {
+		if time.Since(report.LastSeen) > cache.config.ResetAfter {
+			os.Stdout.WriteString("Deleting cache entry for " + ip + "\n")
+			delete(cache.counter, ip)
+		}
+	}
 }
