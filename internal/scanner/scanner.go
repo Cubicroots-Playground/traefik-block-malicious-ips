@@ -1,40 +1,47 @@
 package scanner
 
 import (
-	"context"
 	"net"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/Cubicroots-Playground/traefik-block-malicious-ips/internal/cache"
-	agents "github.com/monperrus/crawler-user-agents"
 )
 
 // Scanner defines an interface to scan incoming requests.
 type Scanner interface {
-	ScanRequest(context.Context, *http.Request) cache.MaliciousRequestType
+	ScanRequest(*http.Request) cache.MaliciousRequestType
+}
+
+type Config struct {
+	IncludePrivateIPs bool
 }
 
 // New assembles a new scanner.
-func New() Scanner {
-	return &scanner{}
+func New(config *Config) Scanner {
+	return &scanner{
+		config: config,
+	}
 }
 
-type scanner struct{}
+type scanner struct {
+	config *Config
+}
 
-func (scanner *scanner) ScanRequest(_ context.Context, r *http.Request) cache.MaliciousRequestType {
+func (scanner *scanner) ScanRequest(r *http.Request) cache.MaliciousRequestType {
 	remoteAddr := r.Header.Get("X-Real-Ip")
 
 	ip := net.ParseIP(remoteAddr)
 
 	// Could not parse IP.
 	if ip == nil {
-		os.Stdout.WriteString("could not parse IP " + remoteAddr)
+		os.Stdout.WriteString("could not parse IP '" + remoteAddr + "'\n")
 		return cache.MaliciousRequestTypeUnknow
 	}
 
 	// Exclude private IP spaces.
-	if ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+	if !scanner.config.IncludePrivateIPs && (ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast()) {
 		return cache.MaliciousRequestTypeUnknow
 	}
 
@@ -100,8 +107,35 @@ func (scanner *scanner) detectCrawler(r *http.Request) cache.MaliciousRequestTyp
 		return cache.MaliciousRequestTypeUnknow
 	}
 
-	if agents.IsCrawler(userAgent) {
-		return cache.MaliciousRequestTypeCrawler
+	crawlers := []string{
+		// Google.
+		"Googlebot",
+		"AdsBot",
+		"Feedfetcher",
+		"Mediapartners",
+		"APIs-Google",
+		"InspectionTool",
+		"Storebot",
+		// Bing.
+		"bingbot",
+		// Misc.
+		"Slurp",
+		"WGETbot",
+		"LinkedIn",
+		// Microsoft.
+		"msnbot",
+		// Programming.
+		"Python",
+		"python",
+		"libwww",
+		"httpunit",
+		"Nutch",
+		"Go-http-client",
+	}
+	for _, crawler := range crawlers {
+		if strings.Contains(userAgent, crawler) {
+			return cache.MaliciousRequestTypeCrawler
+		}
 	}
 
 	return cache.MaliciousRequestTypeUnknow

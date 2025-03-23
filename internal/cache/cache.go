@@ -1,14 +1,13 @@
 package cache
 
 import (
-	"context"
 	"sync"
 	"time"
 )
 
 // Cache describes an interface to cache malicious requests.
 type Cache interface {
-	CountRequest(context.Context, string, MaliciousRequestType) (IPReport, error)
+	CountRequest(string, MaliciousRequestType) (IPReport, error)
 }
 
 type Config struct {
@@ -58,7 +57,6 @@ type IPReport struct {
 }
 
 func (cache *cache) CountRequest(
-	ctx context.Context,
 	sourceIP string,
 	requestType MaliciousRequestType,
 ) (IPReport, error) {
@@ -86,6 +84,7 @@ func (cache *cache) CountRequest(
 
 func (cache *cache) shouldBlock(report *IPReport) bool {
 	// Check if entry should be reset.
+	// TODO auto cleanup.
 	if report.Blocked && time.Since(report.LastSeen) > cache.config.ResetAfter {
 		return false
 	}

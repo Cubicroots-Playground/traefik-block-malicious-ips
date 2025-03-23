@@ -27,5 +27,5 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
       - "traefik.http.routers.whoami.entrypoints=web"
-      - "traefik.http.middlewares.my-plugindemo.plugin.plugindemo.a=b"
+      - "traefik.http.middlewares.my-plugindemo.plugin.plugindemo.includePrivateIPs=false"
       - "traefik.http.routers.whoami.middlewares=my-plugindemo"
