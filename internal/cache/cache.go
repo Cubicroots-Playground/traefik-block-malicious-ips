@@ -20,6 +20,17 @@ type Config struct {
 	MinTime time.Duration
 	// An IP needs to exceed at least this amount of requests per minutes to be blocked.
 	MinRequestsPerMinute map[MaliciousRequestType]float64
+
+	// Configure metrics being send to a prometheus push gateway.
+	Pushgateway *PrometheusPushGatewayConfig
+}
+
+type PrometheusPushGatewayConfig struct {
+	Address string
+
+	// Username and password for basic auth.
+	Username string
+	Password string
 }
 
 // New assembles a new cache.
@@ -30,7 +41,7 @@ func New(cfg *Config) Cache {
 		config:  cfg,
 	}
 
-	go service.runCleanup()
+	go service.runJobs()
 
 	return service
 }
@@ -44,6 +55,19 @@ type cache struct {
 
 // MaliciousRequestType specifies the type of malicious request.
 type MaliciousRequestType int
+
+func (requestType MaliciousRequestType) toLabelValue() string {
+	switch requestType {
+	case MaliciousRequestTypeAuthEnumeration:
+		return "auth_enumeration"
+	case MaliciousRequestTypeSpam:
+		return "spam"
+	case MaliciousRequestTypeCrawler:
+		return "crawler"
+	default:
+		return "unknown"
+	}
+}
 
 // List of available malicious request types.
 const (
@@ -125,11 +149,16 @@ func (cache *cache) shouldBlock(report *IPReport) bool {
 	return block
 }
 
-func (cache *cache) runCleanup() {
-	ticker := time.NewTicker(time.Minute)
+func (cache *cache) runJobs() {
+	cleanupTicker := time.NewTicker(time.Minute)
+	metricsTicker := time.NewTicker(time.Minute + time.Millisecond*299)
 	for {
-		<-ticker.C
-		cache.cleanup()
+		select {
+		case <-metricsTicker.C:
+			cache.pushMetrics()
+		case <-cleanupTicker.C:
+			cache.cleanup()
+		}
 	}
 }
 

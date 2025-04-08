@@ -29,4 +29,7 @@ services:
       - "traefik.http.routers.whoami.entrypoints=web"
       - "traefik.http.middlewares.my-plugindemo.plugin.plugindemo.includePrivateIPs=true"
       - "traefik.http.middlewares.my-plugindemo.plugin.plugindemo.resetAfterMinutes=5"
+      - "traefik.http.middlewares.my-plugindemo.plugin.plugindemo.prometheusPushgatewayAddress=https://pushgateway.example.com"
+      - "traefik.http.middlewares.my-plugindemo.plugin.plugindemo.prometheusPushgatewayUser=admin"
+      - "traefik.http.middlewares.my-plugindemo.plugin.plugindemo.prometheusPushgatewayPassword=xxx"
       - "traefik.http.routers.whoami.middlewares=my-plugindemo"

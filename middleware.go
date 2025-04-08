@@ -22,6 +22,9 @@ type Config struct {
 	MinRequestsPerMinuteAuthEnumeration float64 `json:"minRequestsPerMinuteAuthEnumeration"`
 	MinRequestsPerMinuteSpam            float64 `json:"minRequestsPerMinuteSpam"`
 	IncludePrivateIPs                   bool    `json:"includePrivateIPs"`
+	PrometheusPushgatewayAddress        string  `json:"prometheusPushgatewayAddress"`
+	PrometheusPushgatewayUser           string  `json:"prometheusPushgatewayUser"`
+	PrometheusPushgatewayPassword       string  `json:"prometheusPushgatewayPassword"`
 }
 
 // CreateConfig creates the default plugin configuration.
@@ -49,6 +52,16 @@ type BlockMaliciousIPsMiddleware struct {
 
 // New creates a new plugin.
 func New(_ context.Context, next http.Handler, config *Config, _ string) (http.Handler, error) {
+	var pushgatewayConfig *cache.PrometheusPushGatewayConfig
+
+	if config.PrometheusPushgatewayAddress != "" {
+		pushgatewayConfig = &cache.PrometheusPushGatewayConfig{
+			Address:  config.PrometheusPushgatewayAddress,
+			Username: config.PrometheusPushgatewayUser,
+			Password: config.PrometheusPushgatewayPassword,
+		}
+	}
+
 	a := &BlockMaliciousIPsMiddleware{
 		next:   next,
 		config: config,
@@ -69,6 +82,7 @@ func New(_ context.Context, next http.Handler, config *Config, _ string) (http.H
 				cache.MaliciousRequestTypeCrawler:         config.MinRequestsPerMinuteCrawler,
 				cache.MaliciousRequestTypeSpam:            config.MinRequestsPerMinuteSpam,
 			},
+			Pushgateway: pushgatewayConfig,
 		}),
 	}
 
